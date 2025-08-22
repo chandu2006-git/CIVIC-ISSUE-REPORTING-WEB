@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register Complaint - Grama Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --primary: #2563eb;
+      --dark: #0f172a;
+      --light: #64748b;
+      --success: #16a34a;
+      --error: #dc2626;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      color: var(--dark);
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.7rem;
+      margin-top: 0.3rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input[readonly] {
+      background-color: #f1f5f9;
+      cursor: not-allowed;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .optional {
+      font-weight: normal;
+      font-size: 0.9rem;
+      color: var(--light);
+    }
+
+    .submit-btn {
+      margin-top: 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1.1rem;
+    }
+
+    .submit-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    .submit-btn:disabled {
+      background-color: var(--light);
+      cursor: not-allowed;
+    }
+
+    .alert {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-left: 5px solid;
+      display: none;
+      border-radius: 5px;
+    }
+
+    .alert.success {
+      background-color: #dcfce7;
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .alert.error {
+      background-color: #fee2e2;
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    .image-preview {
+      margin-top: 0.5rem;
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Complaint Registration Form</h2>
+  <form id="complaintForm">
+
+    <!-- Auto-filled User Information -->
+    <label for="userId">Logged-in User</label>
+    <input type="text" id="userId" readonly />
+
+    <label for="name">Full Name *</label>
+    <input type="text" id="name" required />
+
+    <label for="phone">Phone Number *</label>
+    <input type="tel" id="phone" pattern="[0-9]{10}" required />
+
+    <label for="email">Email <span class="optional">(Optional)</span></label>
+    <input type="email" id="email" />
+
+    <label for="address">Home Address *</label>
+    <textarea id="address" rows="2" required></textarea>
+
+    <label for="type">Complaint Type *</label>
+    <select id="type" required>
+      <option value="">Select Type</option>
+      <option>Water Supply</option>
+      <option>Electricity Issue</option>
+      <option>Road Damage</option>
+      <option>Waste Management</option>
+      <option>Other</option>
+    </select>
+
+    <label for="description">Complaint Description *</label>
+    <textarea id="description" rows="4" required maxlength="300"></textarea>
+
+    <label for="location">Problem Location *</label>
+    <input type="text" id="location" required />
+
+    <label for="date">Date of Issue <span class="optional">(Optional)</span></label>
+    <input type="date" id="date" />
+
+    <label for="photo">Attach a Photo <span class="optional">(Optional)</span></label>
+    <input type="file" id="photo" accept="image/*" />
+    <img id="imagePreview" class="image-preview" alt="Preview" />
+
+    <button type="submit" class="submit-btn" id="submitBtn">Submit Complaint</button>
+    <div class="loading" id="loading">Submitting complaint...</div>
+  </form>
+
+  <div class="alert" id="alertBox"></div>
+</div>
+
+<script>
+  // Supabase Configuration
+  const SUPABASE_URL = 'https://salftjcayvhzppzoiekp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhbGZ0amNheXZoenBwem9pZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mzk5ODQsImV4cCI6MjA2OTUxNTk4NH0.3y1jevDQ9vf39RtViuSyxya4dzM1bScEkGzABOeu-No';
+  
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Check if user is logged in
+  const user = JSON.parse(localStorage.getItem("loggedUser"));
+  if (!user) {
+    alert("❌ Please login first.");
+    window.location.href = "login.html";
+  }
+
+  // Add header with user info and navigation
+  const header = document.createElement('header');
+  header.style.cssText = 'background:white;padding:1rem 2rem;box-shadow:0 2px 6px rgba(0,0,0,0.05);margin-bottom:2rem;';
+  header.innerHTML = `
+    <div style="max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <img src="csp-logo.jpg" alt="logo" style="height:40px;">
+        <h1 style="font-size:1.5rem;font-weight:bold;color:#0f172a;">Grama</h1>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:center;">
+        <span style="font-weight:bold;color:#2563eb;">Welcome, ${user.username || 'User'}</span>
+        <a href="dashboard.html" style="padding:0.5rem 1rem;border:2px solid #2563eb;color:#2563eb;border-radius:6px;text-decoration:none;font-weight:bold;">Dashboard</a>
+        <a href="#" id="logoutBtn" style="padding:0.5rem 1rem;background:#2563eb;color:white;border-radius:6px;text-decoration:none;font-weight:bold;">Logout</a>
+      </div>
+    </div>
+  `;
+  document.body.insertBefore(header, document.body.firstChild);
+
+  // Logout functionality
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem("loggedUser");
+    alert("✅ Logged out successfully!");
+    window.location.href = "index.html";
+  });
+
+  // Pre-fill user information
+  document.getElementById("userId").value = user.username || user.id;
+
+  // Image preview functionality
+  const photoInput = document.getElementById('photo');
+  const imagePreview = document.getElementById('imagePreview');
+  
+  photoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        imagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      imagePreview.style.display = 'none';
+    }
+  });
+
+  // Alert box function
+  function showAlert(message, type = "success") {
+    const box = document.getElementById("alertBox");
+    box.innerText = message;
+    box.className = `alert ${type}`;
+    box.style.display = "block";
+    setTimeout(() => (box.style.display = "none"), 5000);
+  }
+
+  // Generate unique complaint ID
+  function generateComplaintId() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `C${timestamp}${random}`;
+  }
+
+  // Handle image upload to Supabase Storage
+  async function uploadImage(file) {
+    if (!file) return null;
+    
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('complaint-images')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Image upload error:', error);
+        return null;
+      }
+      
+      // Return the file path
+      return fileName;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return null;
+    }
+  }
+
+  // Handle form submission
+  document.getElementById("complaintForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const loading = document.getElementById('loading');
+    const form = e.target;
+    
+    // Disable submit button and show loading
+    submitBtn.disabled = true;
+    loading.style.display = 'block';
+    
+    try {
+      // Get form data
+      const formData = {
+        name: form.name.value.trim(),
+        phone: form.phone.value.trim(),
+        email: form.email.value.trim(),
+        address: form.address.value.trim(),
+        type: form.type.value.trim(),
+        description: form.description.value.trim(),
+        location: form.location.value.trim(),
+        date: form.date.value || new Date().toISOString().split("T")[0]
+      };
+      
+      // Validate required fields
+      if (!formData.name || !formData.phone || !formData.address || 
+          !formData.type || !formData.description || !formData.location) {
+        throw new Error("Please fill in all required fields.");
+      }
+      
+      // Handle image upload if provided
+      const photoFile = form.photo.files[0];
+      let imagePath = null;
+      
+      if (photoFile) {
+        imagePath = await uploadImage(photoFile);
+        if (!imagePath) {
+          throw new Error("Failed to upload image. Please try again.");
+        }
+      }
+      
+      // Prepare complaint data for database (simplified to match existing schema)
+      const complaint = {
+        complaint_id: generateComplaintId(), // Auto-generated unique ID
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email || null,
+        type: formData.type,
+        description: formData.description,
+        location: formData.location,
+        date: formData.date,
+        status: "Pending"                    // Default status
+      };
+      
+      // Add optional fields only if they exist in your schema
+      if (formData.address) {
+        complaint.address = formData.address;
+      }
+      
+      if (imagePath) {
+        complaint.image_path = imagePath;
+      }
+      
+      // Debug: Log the complaint data being inserted
+      console.log("Attempting to insert complaint:", complaint);
+      
+      // Insert complaint into Supabase database
+      const { data, error } = await supabase
+        .from("complaints")
+        .insert([complaint])
+        .select();
+      
+      if (error) {
+        console.error("Database insert error:", error);
+        console.error("Error details:", error.details);
+        console.error("Error message:", error.message);
+        console.error("Error hint:", error.hint);
+        throw new Error(`Database error: ${error.message || 'Failed to save complaint. Please try again.'}`);
+      }
+      
+      // Success - clear form and show success message
+      form.reset();
+      document.getElementById("userId").value = user.username || user.id;
+      imagePreview.style.display = 'none';
+      
+      showAlert(`✅ Complaint registered successfully! Your Complaint ID is: ${complaint.complaint_id}`, "success");
+      
+      // Optional: Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        if (confirm("Would you like to view your dashboard?")) {
+          window.location.href = "dashboard.html";
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Form submission error:", error);
+      showAlert(`❌ ${error.message}`, "error");
+    } finally {
+      // Re-enable submit button and hide loading
+      submitBtn.disabled = false;
+      loading.style.display = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>

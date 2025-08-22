@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Grama Complaint Register</title>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #0f172a;
+      --btn-color: #2563eb;
+      --btn-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --text-light: #64748b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Georgia', serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      max-width: 1200px;
+    }
+
+    .login-box {
+      background-color: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 320px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .login-box h2 {
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: var(--btn-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.2s ease-in-out;
+      cursor: pointer;
+    }
+
+    .login-box button:hover {
+      background-color: var(--btn-hover);
+    }
+
+    .credentials {
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      color: var(--text-light);
+      text-align: left;
+    }
+
+    .credentials code {
+      display: block;
+      margin: 0.2rem 0;
+      color: #1e3a8a;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- User Sign Up -->
+    <div class="login-box">
+      <h2>User Sign Up</h2>
+      <input type="text" id="signupUsername" placeholder="Username" />
+      <input type="password" id="signupPassword" placeholder="Password" />
+      <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" />
+      <button id="userSignupBtn">Sign Up</button>
+      <div class="credentials">
+        <strong>New User?</strong>
+        <code>Create your account here</code>
+      </div>
+    </div>
+
+    <!-- User Login -->
+    <div class="login-box">
+      <h2>User Login</h2>
+      <input type="text" id="userUsername" placeholder="Username" />
+      <input type="password" id="userPassword" placeholder="Password" />
+      <button id="userLoginBtn">Login</button>
+      <div class="credentials">
+        <strong>Existing User?</strong>
+        <code>Login with your credentials</code>
+      </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <input type="text" id="adminUsername" placeholder="Admin Username" />
+      <input type="password" id="adminPassword" placeholder="Password" />
+      <button id="adminLoginBtn">Admin Login</button>
+      <div class="credentials">
+        <strong>Admin Access:</strong>
+        <code>Admin must exist in the 'admin' table</code>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = 'https://salftjcayvhzppzoiekp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhbGZ0amNheXZoenBwem9pZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mzk5ODQsImV4cCI6MjA2OTUxNTk4NH0.3y1jevDQ9vf39RtViuSyxya4dzM1bScEkGzABOeu-No';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // User Sign Up
+  document.getElementById("userSignupBtn").addEventListener("click", async () => {
+    const username = document.getElementById("signupUsername").value.trim();
+    const password = document.getElementById("signupPassword").value.trim();
+    const confirmPassword = document.getElementById("signupConfirmPassword").value.trim();
+
+    if (!username || !password || !confirmPassword) {
+      return alert("⚠️ Please fill in all fields.");
+    }
+
+    if (password !== confirmPassword) {
+      return alert("⚠️ Passwords do not match.");
+    }
+
+    if (password.length < 6) {
+      return alert("⚠️ Password must be at least 6 characters long.");
+    }
+
+    // Check if username already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from("users")
+      .select("username")
+      .eq("username", username);
+
+    if (checkError) {
+      console.error("Supabase error checking username:", checkError);
+      console.error("Error message:", checkError.message);
+      return alert(`❌ Error checking username: ${checkError.message || 'Please try again.'}`);
+    }
+
+    if (existingUser.length > 0) {
+      return alert("❌ Username already exists. Please choose a different username.");
+    }
+
+    // Insert new user
+    const { data, error } = await supabase
+      .from("users")
+      .insert([{ username: username, password: password }])
+      .select();
+
+    if (error) {
+      console.error("Supabase error details:", error);
+      console.error("Error message:", error.message);
+      console.error("Error details:", error.details);
+      console.error("Error hint:", error.hint);
+      
+      // Check if it's an RLS policy issue
+      if (error.message && error.message.includes('row-level security policy')) {
+        return alert("❌ Registration failed: Database permissions issue. Please contact administrator to enable user registration.");
+      }
+      
+      return alert(`❌ Registration failed: ${error.message || 'Please try again.'}`);
+    }
+
+    alert("✅ User registration successful! Please login with your credentials.");
+    
+    // Clear signup form
+    document.getElementById("signupUsername").value = "";
+    document.getElementById("signupPassword").value = "";
+    document.getElementById("signupConfirmPassword").value = "";
+  });
+
+  // User Login
+  document.getElementById("userLoginBtn").addEventListener("click", async () => {
+    const username = document.getElementById("userUsername").value.trim();
+    const password = document.getElementById("userPassword").value.trim();
+
+    if (!username || !password) { 
+      return alert("⚠️ Please enter both username and password.");
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("username", username)
+      .eq("password", password);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return alert("❌ Login failed. Please try again.");
+    }
+
+    if (data.length === 0) {
+      return alert("❌ Invalid username or password.");
+    }
+
+    localStorage.setItem("loggedUser", JSON.stringify(data[0]));
+    alert("✅ User login successful!");
+    window.location.href = "index.html";
+  });
+
+  // Admin Login
+  document.getElementById("adminLoginBtn").addEventListener("click", async () => {
+    const username = document.getElementById("adminUsername").value.trim();
+    const password = document.getElementById("adminPassword").value.trim();
+
+    if (!username || !password) {
+      return alert("⚠️ Please enter both admin username and password.");
+    }
+
+    const { data, error } = await supabase
+      .from("admin")
+      .select("*")
+      .eq("username", username)
+      .eq("password", password);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return alert("❌ Admin login failed. Try again.");
+    }
+
+    if (data.length === 0) {
+      return alert("❌ Invalid admin credentials.");
+    }
+
+    localStorage.setItem("loggedAdmin", JSON.stringify(data[0]));
+    alert("✅ Admin login successful!");
+    window.location.href = "admin-dashboard.html";
+  });
+</script>
+
+</body>
+</html>

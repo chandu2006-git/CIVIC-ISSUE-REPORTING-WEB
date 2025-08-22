@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard - Grama Complaint Portal</title>
+  <style>
+    :root{
+      --primary-color:#0f172a;
+      --accent-color:#2563eb;
+      --hover-color:#1d4ed8;
+      --bg-color:#f8fafc;
+      --text-light:#64748b;
+      --danger-color:#dc2626;
+      --success-color:#16a34a;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI', Georgia, serif}
+    body{background:var(--bg-color);color:var(--primary-color);line-height:1.4}
+    header{background:#fff;padding:1rem 2rem;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+    .header-container{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo img{height:40px}
+    nav ul{display:flex;list-style:none;gap:18px}
+    nav a{color:inherit;text-decoration:none;font-weight:600}
+    .btn-outline,.btn-solid{padding:.5rem 1rem;border-radius:6px;font-weight:700;text-decoration:none;cursor:pointer;border:none}
+    .btn-outline{border:2px solid var(--accent-color);color:var(--accent-color);background:transparent}
+    .btn-solid{background:var(--accent-color);color:#fff}
+    .section{max-width:1200px;margin:auto;padding:1.5rem}
+    .welcome{text-align:center;margin-bottom:1rem}
+
+    /* Search */
+    .search-container{display:flex;justify-content:center;gap:8px;align-items:center;margin:1rem 0 1.5rem}
+    #search-box{width:60%;padding:.9rem 1rem;font-size:1.05rem;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+    #search-btn{padding:.9rem 1rem;border-radius:8px;background:var(--accent-color);color:#fff;border:none;cursor:pointer;font-weight:700}
+    #search-btn:disabled{opacity:.6;cursor:not-allowed}
+
+    /* stats */
+    .stats{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:space-around}
+    .stat-card{flex:1;min-width:180px;background:#fff;padding:1.2rem;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);text-align:center}
+    .stat-card h2{font-size:1.8rem;color:var(--accent-color);margin-bottom:.25rem}
+    .stat-card p{color:var(--text-light);margin:0}
+
+    /* table */
+    table{width:100%;border-collapse:collapse;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden}
+    th,td{padding:.85rem;text-align:left;border-bottom:1px solid #e2e8f0;font-size:0.95rem}
+    th{background:#f1f5f9;font-weight:700}
+    tbody tr:hover { background: #fbfdff; }
+
+    /* Action buttons */
+    .action-buttons{display:flex;gap:6px;flex-wrap:wrap}
+    .btn-success{background:var(--success-color);color:#fff;border:none;padding:.4rem .6rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600}
+    .btn-success:hover{background:#15803d}
+    .btn-primary{background:var(--accent-color);color:#fff;border:none;padding:.4rem .6rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600}
+    .btn-primary:hover{background:var(--hover-color)}
+    .btn-danger{background:var(--danger-color);color:#fff;border:none;padding:.4rem .6rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600}
+    .btn-danger:hover{background:#b91c1c}
+
+    /* Status badges */
+    .status-badge{padding:.3rem .6rem;border-radius:4px;font-size:0.85rem;font-weight:600;text-align:center;display:inline-block;min-width:80px}
+    .status-pending{background:#fef3c7;color:#92400e}
+    .status-verified{background:#d1fae5;color:#065f46}
+    .status-resolved{background:#dbeafe;color:#1e40af}
+
+    footer{background:var(--primary-color);color:#fff;padding:2rem;margin-top:2rem}
+    .footer-container{max-width:1200px;margin:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    
+    @media (max-width:768px){
+      #search-box{width:86%}
+      .stat-card{min-width:100%}
+      .header-container{padding:0 8px}
+      .action-buttons{flex-direction:column}
+      table{font-size:0.85rem}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <img src="csp-logo.jpg" alt="logo">
+        <h1>Grama</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="register.html">Register</a></li>
+          <li><a href="admin-dashboard.html">Dashboard</a></li>
+        </ul>
+      </nav>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="adminName" style="font-weight:bold;color:var(--accent-color)">Admin</span>
+        <a href="#" class="btn-solid" id="logoutBtn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section welcome">
+    <h2>Welcome, Admin</h2>
+    <p>Manage all submitted complaints below.</p>
+  </section>
+
+  <!-- Search (centered) -->
+  <section class="section search-container" aria-label="Search complaint">
+    <input id="search-box" placeholder="Search Complaint ID or Name" aria-label="Complaint search" />
+    <button id="search-btn" type="button">Search</button>
+  </section>
+
+  <!-- Stats -->
+  <section class="section stats" aria-live="polite">
+    <div class="stat-card"><h2 id="totalCount">0</h2><p>Total Complaints</p></div>
+    <div class="stat-card"><h2 id="verifiedCount">0</h2><p>Verified Complaints</p></div>
+    <div class="stat-card"><h2 id="resolvedCount">0</h2><p>Resolved Complaints</p></div>
+  </section>
+
+  <!-- Full list -->
+  <section class="section" aria-label="All complaints">
+    <table>
+      <thead>
+        <tr>
+          <th>Complaint ID</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="complaints-tbody"></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <div class="footer-container">
+      <div><h2>Gram Complaint Register System</h2><p>&copy; 2025</p></div>
+      <div>
+        <ul style="list-style:none;padding:0;margin:0 0 8px 0">
+          <li><a href="#" style="color:#fff">Home</a></li>
+          <li><a href="#" style="color:#fff">Register</a></li>
+        </ul>
+        <p style="margin-top:.4rem">Email: higher.officfor@gmail.in</p>
+        <p>Ph: 825-388-432</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
+  <script>
+    // Admin auth guard
+    const admin = JSON.parse(localStorage.getItem("loggedAdmin"));
+    if (!admin) {
+      alert("❌ Please login as admin first.");
+      window.location.href = "login.html";
+    }
+    const adminName = document.getElementById('adminName');
+    if (adminName) adminName.textContent = admin.username || 'Admin';
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('loggedAdmin');
+      alert('✅ Logged out successfully!');
+      window.location.href = 'index.html';
+    });
+
+    // Supabase client
+    const SUPABASE_URL = 'https://salftjcayvhzppzoiekp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhbGZ0amNheXZoenBwem9pZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mzk5ODQsImV4cCI6MjA2OTUxNTk4NH0.3y1jevDQ9vf39RtViuSyxya4dzM1bScEkGzABOeu-No';
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // DOM refs
+    const searchBox = document.getElementById('search-box');
+    const searchBtn = document.getElementById('search-btn');
+    const tbody = document.getElementById('complaints-tbody');
+    const totalCount = document.getElementById('totalCount');
+    const verifiedCount = document.getElementById('verifiedCount');
+    const resolvedCount = document.getElementById('resolvedCount');
+
+    // State
+    let allComplaints = [];
+    let filteredComplaints = [];
+
+    // Load all complaints from Supabase
+    async function loadAllComplaints() {
+      try {
+        const { data, error } = await client
+          .from('complaints')
+          .select('*')
+          .order('date', { ascending: false });
+
+        if (error) {
+          console.error('Error loading complaints:', error);
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">Failed to load complaints.</td></tr>';
+          totalCount.textContent = '0';
+          verifiedCount.textContent = '0';
+          resolvedCount.textContent = '0';
+          return;
+        }
+
+        allComplaints = Array.isArray(data) ? data : [];
+        filteredComplaints = [...allComplaints];
+        updateStats();
+        renderTable();
+      } catch (err) {
+        console.error('Unexpected error:', err);
+      }
+    }
+
+    // Stats
+    function updateStats() {
+      const total = allComplaints.length;
+      const verified = allComplaints.filter(c => (c.status || '').toLowerCase() === 'verified').length;
+      const resolved = allComplaints.filter(c => (c.status || '').toLowerCase() === 'resolved').length;
+      totalCount.textContent = total;
+      verifiedCount.textContent = verified;
+      resolvedCount.textContent = resolved;
+    }
+
+    // Table rendering
+    function renderTable() {
+      tbody.innerHTML = '';
+      if (filteredComplaints.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">No complaints found.</td></tr>';
+        return;
+      }
+      filteredComplaints.forEach(complaint => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(complaint.complaint_id || 'N/A')}</td>
+          <td>${escapeHtml(complaint.name || 'N/A')}</td>
+          <td>${escapeHtml(complaint.type || 'N/A')}</td>
+          <td><span class="status-badge status-${(complaint.status || 'Pending').toLowerCase()}">${complaint.status || 'Pending'}</span></td>
+          <td>${formatDate(complaint.date)}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-success" onclick="updateStatus('${complaint.complaint_id}', 'Verified')">VERIFIED</button>
+              <button class="btn-primary" onclick="updateStatus('${complaint.complaint_id}', 'Resolved')">RESOLVED</button>
+              <button class="btn-danger" onclick="deleteComplaint('${complaint.complaint_id}')">DELETE</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Search
+    function performSearch() {
+      const query = (searchBox.value || '').trim().toLowerCase();
+      if (!query) {
+        filteredComplaints = [...allComplaints];
+      } else {
+        filteredComplaints = allComplaints.filter(c => {
+          const id = String(c.complaint_id || '').toLowerCase();
+          const name = String(c.name || '').toLowerCase();
+          return id.includes(query) || name.includes(query);
+        });
+      }
+      renderTable();
+    }
+
+    // Update status in Supabase
+    async function updateStatus(complaintId, newStatus) {
+      try {
+        const { error } = await client
+          .from('complaints')
+          .update({ status: newStatus })
+          .eq('complaint_id', complaintId);
+        if (error) {
+          console.error('Update error:', error);
+          alert('Failed to update status: ' + (error.message || error));
+          return;
+        }
+        await loadAllComplaints();
+        alert(`✅ Complaint ${complaintId} status updated to ${newStatus}`);
+      } catch (err) {
+        console.error('Unexpected update error:', err);
+        alert('Unexpected error updating status: ' + (err.message || err));
+      }
+    }
+
+    // Delete complaint from Supabase
+    async function deleteComplaint(complaintId) {
+      try {
+        if (!confirm(`Delete complaint ${complaintId}? This cannot be undone.`)) return;
+        const { error } = await client
+          .from('complaints')
+          .delete()
+          .eq('complaint_id', complaintId);
+        if (error) {
+          console.error('Delete error:', error);
+          alert('Failed to delete: ' + (error.message || error));
+          return;
+        }
+        await loadAllComplaints();
+        alert(`✅ Complaint ${complaintId} has been deleted successfully`);
+      } catch (err) {
+        console.error('Unexpected delete error:', err);
+        alert('Unexpected error deleting complaint: ' + (err.message || err));
+      }
+    }
+
+    // Helpers
+    function formatDate(raw) {
+      if (!raw) return 'N/A';
+      try { return new Date(raw).toLocaleDateString(); } catch { return String(raw); }
+    }
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Events
+    window.addEventListener('load', loadAllComplaints);
+    searchBtn.addEventListener('click', performSearch);
+    searchBox.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
+
+    // Real-time sync
+    const subscription = client
+      .channel('complaints_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
+        loadAllComplaints();
+      })
+      .subscribe();
+  </script>
+</body>
+</html>

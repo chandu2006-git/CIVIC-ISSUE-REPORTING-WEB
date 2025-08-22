@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard - Grama Complaint Portal</title>
+  <style>
+    :root {
+      --primary-color: #0f172a;
+      --accent-color: #2563eb;
+      --btn-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --text-light: #64748b;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Georgia', serif;
+    }
+    body { background-color: var(--bg-color); color: var(--primary-color); }
+    header {
+      background-color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      padding: 1rem 2rem;
+    }
+    .header-container {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 0.5rem; }
+    .logo img { height: 40px; }
+    nav ul { display: flex; list-style: none; gap: 1.5rem; }
+    nav a { text-decoration: none; color: var(--primary-color); }
+    .btn-solid {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: bold;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-solid:hover { background-color: var(--btn-hover); }
+    .section { padding: 2rem; max-width: 1200px; margin: auto; }
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .card {
+      background-color: white;
+      flex: 1;
+      min-width: 200px;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .card h2 {
+      font-size: 2rem;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 0.6rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    th, td {
+      padding: 0.8rem;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    th { background: #f1f5f9; }
+    tr:hover { background-color: #f9fafb; }
+    footer {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 2rem;
+      margin-top: 3rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <img src="csp-logo.jpg" alt="logo" />
+        <h1>Grama Admin</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="admin-dashboard.html">Dashboard</a></li>
+          <li><a href="#">Settings</a></li>
+        </ul>
+      </nav>
+      <button class="btn-solid" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <section class="section stats">
+    <div class="card"><h2 id="totalCount">-</h2><p>Total Complaints</p></div>
+    <div class="card"><h2 id="verifiedCount">-</h2><p>Verified Complaints</p></div>
+    <div class="card"><h2 id="resolvedCount">-</h2><p>Resolved Complaints</p></div>
+  </section>
+
+  <!-- Search -->
+  <section class="section">
+    <div class="search-box">
+      <input type="text" id="complaintIdInput" placeholder="Enter Complaint ID..." />
+      <button id="checkStatusBtn" class="btn-solid">Search</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="complaintsTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2025 Grama Complaint Portal
+  </footer>
+
+  <!-- Supabase Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const SUPABASE_URL = 'https://salftjcayvhzppzoiekp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhbGZ0amNheXZoenBwem9pZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mzk5ODQsImV4cCI6MjA2OTUxNTk4NH0.3y1jevDQ9vf39RtViuSyxya4dzM1bScEkGzABOeu-No';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const totalCount = document.getElementById("totalCount");
+    const verifiedCount = document.getElementById("verifiedCount");
+    const resolvedCount = document.getElementById("resolvedCount");
+    const complaintsTableBody = document.getElementById("complaintsTableBody");
+    const complaintIdInput = document.getElementById("complaintIdInput");
+    const checkStatusBtn = document.getElementById("checkStatusBtn");
+
+    // Load all complaints
+    async function loadDashboard() {
+      const { data, error } = await client
+        .from('complaints')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error("Error loading complaints:", error);
+        return;
+      }
+
+      // Stats
+      totalCount.textContent = data.length;
+      verifiedCount.textContent = data.filter(c => c.status === 'Verified').length;
+      resolvedCount.textContent = data.filter(c => c.status === 'Resolved').length;
+
+      // Table
+      complaintsTableBody.innerHTML = '';
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.complaint_id}</td>
+          <td>${item.type}</td>
+          <td>${item.name}</td>
+          <td>${item.location}</td>
+          <td>${item.date}</td>
+          <td>${item.status}</td>
+          <td>${item.description}</td>
+        `;
+        complaintsTableBody.appendChild(row);
+      });
+    }
+
+    // Search by Complaint ID
+    async function searchComplaint() {
+      const id = complaintIdInput.value.trim();
+      if (!id) return alert("Please enter a Complaint ID");
+
+      const { data, error } = await client
+        .from('complaints')
+        .select('*')
+        .eq('complaint_id', id);
+
+      if (error || !data.length) {
+        alert("❌ Complaint not found");
+        return;
+      }
+
+      complaintsTableBody.innerHTML = '';
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.complaint_id}</td>
+          <td>${item.type}</td>
+          <td>${item.name}</td>
+          <td>${item.location}</td>
+          <td>${item.date}</td>
+          <td>${item.status}</td>
+          <td>${item.description}</td>
+        `;
+        complaintsTableBody.appendChild(row);
+      });
+    }
+
+    checkStatusBtn.addEventListener("click", searchComplaint);
+    complaintIdInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") searchComplaint();
+    });
+
+    window.onload = loadDashboard;
+
+    function logout() {
+      alert("Logged out");
+      // redirect or clear session here
+    }
+  </script>
+</body>
+</html>
